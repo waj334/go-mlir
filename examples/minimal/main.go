@@ -28,7 +28,7 @@ func main() {
 
 	// Create a function.
 	funcBodyRegion := mlir.NewRegion()
-	funcBody := mlir.NewBlock([]mlir.Type{memrefType, memrefType}, []mlir.LocationLike{loc, loc})
+	funcBody := mlir.NewBlock([]mlir.TypeLike{memrefType, memrefType}, []mlir.LocationLike{loc, loc})
 	funcBodyRegion.AppendOwnedBlock(funcBody)
 	funcTypeAttr := mlir.NewAttributeFromString(ctx, "(memref<?xf32>, memref<?xf32>) -> ()")
 	funcNameAttr := mlir.NewAttributeFromString(ctx, "\"add\"")

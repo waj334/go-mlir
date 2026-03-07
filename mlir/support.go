@@ -28,23 +28,19 @@ type StringRef struct {
 	owned bool
 }
 
-func (s *StringRef) raw() C.MlirStringRef {
+func (s StringRef) raw() C.MlirStringRef {
 	return s.ref
 }
 
-func (s *StringRef) String() string {
+func (s StringRef) String() string {
 	return C.GoStringN(s.ref.data, C.int(s.ref.length))
 }
 
-func (s *StringRef) Destroy() {
+func (s StringRef) Destroy() {
 	if !s.owned || s.ref.data == nil {
 		return
 	}
-
 	C.free(unsafe.Pointer(s.ref.data))
-	s.ref.data = nil
-	s.ref.length = 0
-	s.owned = false
 }
 
 func NewStringRef(value string) StringRef {

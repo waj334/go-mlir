@@ -430,9 +430,10 @@ func NewOperationState(name string, loc LocationLike) *OperationState {
 }
 
 func (s *OperationState) raw() *C.MlirOperationState { return (*C.MlirOperationState)(s) }
-func (s *OperationState) AddResults(results ...Type) *OperationState {
+func (s *OperationState) AddResults(results ...TypeLike) *OperationState {
 	if len(results) > 0 {
-		C.mlirOperationStateAddResults(s.raw(), C.intptr_t(len(results)), (*C.MlirType)(&results[0]))
+		rawResults := unwrapTypeSlice(results)
+		C.mlirOperationStateAddResults(s.raw(), C.intptr_t(len(results)), (*C.MlirType)(&rawResults[0]))
 	}
 	return s
 }
@@ -846,7 +847,7 @@ func (r Region) InsertOwnedBlockBefore(reference, block Block) {
 
 type Block C.MlirBlock
 
-func NewBlock(args []Type, locs []LocationLike) Block {
+func NewBlock(args []TypeLike, locs []LocationLike) Block {
 	var rawArgsPtr *C.MlirType
 	var rawLocsPtr *C.MlirLocation
 
@@ -855,12 +856,14 @@ func NewBlock(args []Type, locs []LocationLike) Block {
 	}
 
 	if len(args) > 0 {
+		rawArgs := unwrapTypeSlice(args)
+
 		rawLocs := make([]C.MlirLocation, len(locs))
 		for i, loc := range locs {
 			rawLocs[i] = loc.raw()
 		}
 
-		rawArgsPtr = (*C.MlirType)(&args[0])
+		rawArgsPtr = (*C.MlirType)(&rawArgs[0])
 		rawLocsPtr = (*C.MlirLocation)(&rawLocs[0])
 	}
 
@@ -896,7 +899,7 @@ func (b Block) InsertOwnedOperationBefore(reference, operation Operation) {
 
 func (b Block) NumArguments() int { return int(C.mlirBlockGetNumArguments(b.raw())) }
 
-func (b Block) AddArgument(ty Type, loc LocationLike) {
+func (b Block) AddArgument(ty TypeLike, loc LocationLike) {
 	C.mlirBlockAddArgument(b.raw(), ty.raw(), loc.raw())
 }
 
@@ -904,7 +907,7 @@ func (b Block) EraseArgument(index int) {
 	C.mlirBlockEraseArgument(b.raw(), C.unsigned(index))
 }
 
-func (b Block) InsertArgument(index int, ty Type, loc LocationLike) {
+func (b Block) InsertArgument(index int, ty TypeLike, loc LocationLike) {
 	C.mlirBlockInsertArgument(b.raw(), C.intptr_t(index), ty.raw(), loc.raw())
 }
 
@@ -940,23 +943,23 @@ func (b Block) Predecessor(pos int) Block {
 
 type Value C.MlirValue
 
-func (v Value) raw() C.MlirValue        { return C.MlirValue(v) }
-func (v Value) IsNull() bool            { return bool(C.mlirValueIsNull(v.raw())) }
-func (v Value) Context() Context        { return Context(C.mlirValueGetContext(v.raw())) }
-func (v Value) Location() Location      { return wrapLocation(C.mlirValueGetLocation(v.raw())) }
-func (v Value) IsABlockArgument() bool  { return bool(C.mlirValueIsABlockArgument(v.raw())) }
-func (v Value) IsAOpResult() bool       { return bool(C.mlirValueIsAOpResult(v.raw())) }
-func (v Value) OwningBlock() Block      { return Block(C.mlirBlockArgumentGetOwner(v.raw())) }
-func (v Value) BlockArgNumber() int     { return int(C.mlirBlockArgumentGetArgNumber(v.raw())) }
-func (v Value) SetBlockArgType(ty Type) { C.mlirBlockArgumentSetType(v.raw(), ty.raw()) }
+func (v Value) raw() C.MlirValue            { return C.MlirValue(v) }
+func (v Value) IsNull() bool                { return bool(C.mlirValueIsNull(v.raw())) }
+func (v Value) Context() Context            { return Context(C.mlirValueGetContext(v.raw())) }
+func (v Value) Location() Location          { return wrapLocation(C.mlirValueGetLocation(v.raw())) }
+func (v Value) IsABlockArgument() bool      { return bool(C.mlirValueIsABlockArgument(v.raw())) }
+func (v Value) IsAOpResult() bool           { return bool(C.mlirValueIsAOpResult(v.raw())) }
+func (v Value) OwningBlock() Block          { return Block(C.mlirBlockArgumentGetOwner(v.raw())) }
+func (v Value) BlockArgNumber() int         { return int(C.mlirBlockArgumentGetArgNumber(v.raw())) }
+func (v Value) SetBlockArgType(ty TypeLike) { C.mlirBlockArgumentSetType(v.raw(), ty.raw()) }
 func (v Value) SetBlockArgLocation(loc LocationLike) {
 	C.mlirBlockArgumentSetLocation(v.raw(), loc.raw())
 }
 
 func (v Value) OwningOperation() Operation { return Operation(C.mlirOpResultGetOwner(v.raw())) }
 func (v Value) ResultNumber() int          { return int(C.mlirOpResultGetResultNumber(v.raw())) }
-func (v Value) Type() Type                 { return Type(C.mlirValueGetType(v.raw())) }
-func (v Value) SetType(ty Type)            { C.mlirValueSetType(v.raw(), ty.raw()) }
+func (v Value) Type() Type                 { return wrapType(C.mlirValueGetType(v.raw())) }
+func (v Value) SetType(ty TypeLike)        { C.mlirValueSetType(v.raw(), ty.raw()) }
 func (v Value) Dump()                      { C.mlirValueDump(v.raw()) }
 
 func (v Value) String() string {
@@ -998,25 +1001,51 @@ func (o OpOperand) NextUse() OpOperand   { return OpOperand(C.mlirOpOperandGetNe
 // Type API.
 //===----------------------------------------------------------------------===//
 
-type Type C.MlirType
+type TypeLike interface {
+	raw() C.MlirType
+	IsNull() bool
+	Context() Context
+	Equal(other TypeLike) bool
+	TypeId() TypeId
+	Dialect() Dialect
+	Dump()
+	String() string
+}
+
+type baseType C.MlirType
+
+func (t baseType) raw() C.MlirType           { return C.MlirType(t) }
+func (t baseType) IsNull() bool              { return bool(C.mlirTypeIsNull(t.raw())) }
+func (t baseType) Context() Context          { return Context(C.mlirTypeGetContext(t.raw())) }
+func (t baseType) Equal(other TypeLike) bool { return bool(C.mlirTypeEqual(t.raw(), other.raw())) }
+func (t baseType) TypeId() TypeId            { return TypeId(C.mlirTypeGetTypeID(t.raw())) }
+func (t baseType) Dialect() Dialect          { return Dialect(C.mlirTypeGetDialect(t.raw())) }
+func (t baseType) Dump()                     { C.mlirTypeDump(t.raw()) }
+func (t baseType) String() string {
+	return collectString(func(cb C.MlirStringCallback, ud unsafe.Pointer) {
+		C.mlirTypePrint(t.raw(), cb, ud)
+	})
+}
+
+type Type struct {
+	baseType
+}
+
+func wrapType(raw C.MlirType) Type {
+	return Type{baseType: baseType(raw)}
+}
+func unwrapTypeSlice(types []TypeLike) []C.MlirType {
+	rawTypes := make([]C.MlirType, len(types))
+	for i, t := range types {
+		rawTypes[i] = t.raw()
+	}
+	return rawTypes
+}
 
 func NewTypeFromString(ctx Context, input string) Type {
 	refInput := NewStringRef(input)
 	defer refInput.Destroy()
-	return Type(C.mlirTypeParseGet(ctx.raw(), refInput.raw()))
-}
-
-func (t Type) raw() C.MlirType       { return C.MlirType(t) }
-func (t Type) IsNull() bool          { return bool(C.mlirTypeIsNull(t.raw())) }
-func (t Type) Context() Context      { return Context(C.mlirTypeGetContext(t.raw())) }
-func (t Type) Equal(other Type) bool { return bool(C.mlirTypeEqual(t.raw(), other.raw())) }
-func (t Type) TypeId() TypeId        { return TypeId(C.mlirTypeGetTypeID(t.raw())) }
-func (t Type) Dialect() Dialect      { return Dialect(C.mlirTypeGetDialect(t.raw())) }
-func (t Type) Dump()                 { C.mlirTypeDump(t.raw()) }
-func (t Type) String() string {
-	return collectString(func(cb C.MlirStringCallback, ud unsafe.Pointer) {
-		C.mlirTypePrint(t.raw(), cb, ud)
-	})
+	return wrapType(C.mlirTypeParseGet(ctx.raw(), refInput.raw()))
 }
 
 //===----------------------------------------------------------------------===//
