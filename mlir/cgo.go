@@ -8,6 +8,10 @@ package mlir
 
 
 #cgo LDFLAGS: -Wl,--start-group
+
+
+
+
 #cgo LDFLAGS: -lMLIRAffineAnalysis
 #cgo LDFLAGS: -lMLIRAffineDialect
 #cgo LDFLAGS: -lMLIRAffineToStandard
@@ -399,6 +403,10 @@ package mlir
 #cgo LDFLAGS: -lMLIRBufferizationDialect
 #cgo LDFLAGS: -lMLIRBufferizationPipelines
 #cgo LDFLAGS: -lMLIRBufferizationToMemRef
+
+
+
+
 #cgo LDFLAGS: -Wl,--end-group
 */
 import "C"

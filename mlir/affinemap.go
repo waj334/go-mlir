@@ -8,10 +8,8 @@ import "unsafe"
 
 type AffineMap C.MlirAffineMap
 
-func (a AffineMap) IsNull() bool {
-	return bool(C.mlirAffineMapIsNull(C.MlirAffineMap(a)))
-}
-
+func (a AffineMap) Raw() C.MlirAffineMap { return C.MlirAffineMap(a) }
+func (a AffineMap) IsNull() bool         { return bool(C.mlirAffineMapIsNull(C.MlirAffineMap(a))) }
 func (a AffineMap) Equal(b AffineMap) bool {
 	return bool(C.mlirAffineMapEqual(C.MlirAffineMap(a), C.MlirAffineMap(b)))
 }
@@ -25,27 +23,27 @@ func NewAffineMap(ctx Context, dimCount int, symbolCount int, affineExprs []Affi
 	if len(affineExprs) > 0 {
 		cAffineExprs = (*C.MlirAffineExpr)(unsafe.Pointer(&affineExprs[0]))
 	}
-	return AffineMap(C.mlirAffineMapGet(ctx.raw(), C.intptr_t(dimCount), C.intptr_t(symbolCount), C.intptr_t(len(affineExprs)), cAffineExprs))
+	return AffineMap(C.mlirAffineMapGet(ctx.Raw(), C.intptr_t(dimCount), C.intptr_t(symbolCount), C.intptr_t(len(affineExprs)), cAffineExprs))
 }
 
 func NewEmptyAffineMap(ctx Context) AffineMap {
-	return AffineMap(C.mlirAffineMapEmptyGet(ctx.raw()))
+	return AffineMap(C.mlirAffineMapEmptyGet(ctx.Raw()))
 }
 
 func NewZeroResultAffineMap(ctx Context, dimCount int, symbolCount int) AffineMap {
-	return AffineMap(C.mlirAffineMapZeroResultGet(ctx.raw(), C.intptr_t(dimCount), C.intptr_t(symbolCount)))
+	return AffineMap(C.mlirAffineMapZeroResultGet(ctx.Raw(), C.intptr_t(dimCount), C.intptr_t(symbolCount)))
 }
 
 func NewConstantAffineMap(ctx Context, val int64) AffineMap {
-	return AffineMap(C.mlirAffineMapConstantGet(ctx.raw(), C.int64_t(val)))
+	return AffineMap(C.mlirAffineMapConstantGet(ctx.Raw(), C.int64_t(val)))
 }
 
 func NewMultiDimIdentityAffineMap(ctx Context, numDims int) AffineMap {
-	return AffineMap(C.mlirAffineMapMultiDimIdentityGet(ctx.raw(), C.intptr_t(numDims)))
+	return AffineMap(C.mlirAffineMapMultiDimIdentityGet(ctx.Raw(), C.intptr_t(numDims)))
 }
 
 func NewMinorIdentityAffineMap(ctx Context, dims int, results int) AffineMap {
-	return AffineMap(C.mlirAffineMapMinorIdentityGet(ctx.raw(), C.intptr_t(dims), C.intptr_t(results)))
+	return AffineMap(C.mlirAffineMapMinorIdentityGet(ctx.Raw(), C.intptr_t(dims), C.intptr_t(results)))
 }
 
 func NewPermutationAffineMap(ctx Context, permutation []uint) AffineMap {
@@ -53,7 +51,7 @@ func NewPermutationAffineMap(ctx Context, permutation []uint) AffineMap {
 	if len(permutation) > 0 {
 		cPermutation = (*C.unsigned)(unsafe.Pointer(&permutation[0]))
 	}
-	return AffineMap(C.mlirAffineMapPermutationGet(ctx.raw(), C.intptr_t(len(permutation)), cPermutation))
+	return AffineMap(C.mlirAffineMapPermutationGet(ctx.Raw(), C.intptr_t(len(permutation)), cPermutation))
 }
 
 func (a AffineMap) IsIdentity() bool {

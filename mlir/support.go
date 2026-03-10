@@ -2,6 +2,7 @@ package mlir
 
 import "C"
 import (
+	"io"
 	"runtime/cgo"
 	"strings"
 	"unsafe"
@@ -28,12 +29,20 @@ type StringRef struct {
 	owned bool
 }
 
-func (s StringRef) raw() C.MlirStringRef {
+func (s StringRef) Raw() C.MlirStringRef {
 	return s.ref
 }
 
 func (s StringRef) String() string {
 	return C.GoStringN(s.ref.data, C.int(s.ref.length))
+}
+
+func (s StringRef) Data() unsafe.Pointer {
+	return unsafe.Pointer(s.ref.data)
+}
+
+func (s StringRef) Length() int {
+	return int(s.ref.length)
 }
 
 func (s StringRef) Destroy() {
@@ -76,6 +85,16 @@ func collectString(fn func(cb C.MlirStringCallback, ud unsafe.Pointer)) string {
 	return b.String()
 }
 
+func writeString(w io.Writer, fn func(cb C.MlirStringCallback, ud unsafe.Pointer)) {
+	cb, ud, cleanup := NewStringCallback(func(s string) {
+		if w != nil {
+			_, _ = w.Write([]byte(s))
+		}
+	}).Callback()
+	defer cleanup()
+	fn(cb, ud)
+}
+
 //export goMlirStringCallback
 func goMlirStringCallback(chunk C.MlirStringRef, userdata unsafe.Pointer) {
 	handle := cgo.Handle(uintptr(userdata))
@@ -89,7 +108,7 @@ func goMlirStringCallback(chunk C.MlirStringRef, userdata unsafe.Pointer) {
 
 type LogicalResult C.MlirLogicalResult
 
-func (result LogicalResult) raw() C.MlirLogicalResult {
+func (result LogicalResult) Raw() C.MlirLogicalResult {
 	return C.MlirLogicalResult(result)
 }
 
@@ -115,7 +134,7 @@ func Failure() LogicalResult {
 
 type LLVMThreadPool C.MlirLlvmThreadPool
 
-func (pool LLVMThreadPool) raw() C.MlirLlvmThreadPool {
+func (pool LLVMThreadPool) Raw() C.MlirLlvmThreadPool {
 	return C.MlirLlvmThreadPool(pool)
 }
 
@@ -137,7 +156,7 @@ func NewTypeID(ptr unsafe.Pointer) TypeId {
 	return TypeId(C.mlirTypeIDCreate(ptr))
 }
 
-func (id TypeId) raw() C.MlirTypeID {
+func (id TypeId) Raw() C.MlirTypeID {
 	return C.MlirTypeID(id)
 }
 
@@ -163,7 +182,7 @@ func NewTypeIDAllocator() TypeIdAllocator {
 	return TypeIdAllocator(C.mlirTypeIDAllocatorCreate())
 }
 
-func (allocator TypeIdAllocator) raw() C.MlirTypeIDAllocator {
+func (allocator TypeIdAllocator) Raw() C.MlirTypeIDAllocator {
 	return C.MlirTypeIDAllocator(allocator)
 }
 

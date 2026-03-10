@@ -16,35 +16,35 @@ type IntegerType struct {
 
 func NewIntegerType(ctx Context, width int) IntegerType {
 	return IntegerType{
-		baseType: baseType(C.mlirIntegerTypeGet(ctx.raw(), C.unsigned(width))),
+		baseType: baseType(C.mlirIntegerTypeGet(ctx.Raw(), C.unsigned(width))),
 	}
 }
 
 func NewSignedIntegerType(ctx Context, width int) IntegerType {
 	return IntegerType{
-		baseType: baseType(C.mlirIntegerTypeSignedGet(ctx.raw(), C.unsigned(width))),
+		baseType: baseType(C.mlirIntegerTypeSignedGet(ctx.Raw(), C.unsigned(width))),
 	}
 }
 
 func NewUnsignedIntegerType(ctx Context, width int) IntegerType {
 	return IntegerType{
-		baseType: baseType(C.mlirIntegerTypeUnsignedGet(ctx.raw(), C.unsigned(width))),
+		baseType: baseType(C.mlirIntegerTypeUnsignedGet(ctx.Raw(), C.unsigned(width))),
 	}
 }
 
 func IntegerTypeId() TypeId { return TypeId(C.mlirIntegerTypeGetTypeID()) }
 
 func AsIntegerType(ty TypeLike) (IntegerType, bool) {
-	if C.mlirTypeIsAInteger(ty.raw()) {
-		return IntegerType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsAInteger(ty.Raw()) {
+		return IntegerType{baseType: baseType(ty.Raw())}, true
 	}
 	return IntegerType{}, false
 }
 
-func (i IntegerType) Width() int       { return int(C.mlirIntegerTypeGetWidth(i.raw())) }
-func (i IntegerType) IsSignless() bool { return bool(C.mlirIntegerTypeIsSignless(i.raw())) }
-func (i IntegerType) IsSigned() bool   { return bool(C.mlirIntegerTypeIsSigned(i.raw())) }
-func (i IntegerType) IsUnsigned() bool { return bool(C.mlirIntegerTypeIsUnsigned(i.raw())) }
+func (i IntegerType) Width() int       { return int(C.mlirIntegerTypeGetWidth(i.Raw())) }
+func (i IntegerType) IsSignless() bool { return bool(C.mlirIntegerTypeIsSignless(i.Raw())) }
+func (i IntegerType) IsSigned() bool   { return bool(C.mlirIntegerTypeIsSigned(i.Raw())) }
+func (i IntegerType) IsUnsigned() bool { return bool(C.mlirIntegerTypeIsUnsigned(i.Raw())) }
 
 //===----------------------------------------------------------------------===//
 // Index type.
@@ -55,12 +55,12 @@ type IndexType struct {
 }
 
 func NewIndexType(ctx Context) IndexType {
-	return IndexType{baseType: baseType(C.mlirIndexTypeGet(ctx.raw()))}
+	return IndexType{baseType: baseType(C.mlirIndexTypeGet(ctx.Raw()))}
 }
 
 func AsIndexType(ty TypeLike) (IndexType, bool) {
-	if C.mlirTypeIsAIndex(ty.raw()) {
-		return IndexType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsAIndex(ty.Raw()) {
+		return IndexType{baseType: baseType(ty.Raw())}, true
 	}
 	return IndexType{}, false
 }
@@ -192,14 +192,14 @@ var floatFormats = map[FloatFormat]floatInfo{
 
 func NewFloatType(ctx Context, format FloatFormat) FloatType {
 	if info, ok := floatFormats[format]; ok {
-		return FloatType{baseType: baseType(info.get(ctx.raw()))}
+		return FloatType{baseType: baseType(info.get(ctx.Raw()))}
 	}
 	panic("unsupported float format")
 }
 
 func AsFloatType(ty TypeLike) (FloatType, bool) {
-	if C.mlirTypeIsAFloat(ty.raw()) {
-		return FloatType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsAFloat(ty.Raw()) {
+		return FloatType{baseType: baseType(ty.Raw())}, true
 	}
 	return FloatType{}, false
 }
@@ -219,13 +219,17 @@ func FloatTypeName(format FloatFormat) string {
 }
 
 func (f FloatType) Format() FloatFormat {
-	typeID := C.mlirTypeGetTypeID(f.raw())
+	typeID := C.mlirTypeGetTypeID(f.Raw())
 	for format, info := range floatFormats {
 		if C.mlirTypeIDEqual(typeID, info.typeID()) {
 			return format
 		}
 	}
 	return FloatUnknown
+}
+
+func (f FloatType) Width() int {
+	return int(C.mlirFloatTypeGetWidth(f.Raw()))
 }
 
 //===----------------------------------------------------------------------===//
@@ -237,12 +241,12 @@ type NoneType struct {
 }
 
 func NewNoneType(ctx Context) NoneType {
-	return NoneType{baseType: baseType(C.mlirNoneTypeGet(ctx.raw()))}
+	return NoneType{baseType: baseType(C.mlirNoneTypeGet(ctx.Raw()))}
 }
 
 func AsNoneType(ty TypeLike) (NoneType, bool) {
-	if C.mlirTypeIsANone(ty.raw()) {
-		return NoneType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsANone(ty.Raw()) {
+		return NoneType{baseType: baseType(ty.Raw())}, true
 	}
 	return NoneType{}, false
 }
@@ -261,13 +265,13 @@ type ComplexType struct {
 	baseType
 }
 
-func NewComplexType(elementType TypeLike) ComplexType {
-	return ComplexType{baseType: baseType(C.mlirComplexTypeGet(elementType.raw()))}
+func NewComplexType(elementType FloatType) ComplexType {
+	return ComplexType{baseType: baseType(C.mlirComplexTypeGet(elementType.Raw()))}
 }
 
 func AsComplexType(ty TypeLike) (ComplexType, bool) {
-	if C.mlirTypeIsAComplex(ty.raw()) {
-		return ComplexType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsAComplex(ty.Raw()) {
+		return ComplexType{baseType: baseType(ty.Raw())}, true
 	}
 	return ComplexType{}, false
 }
@@ -278,8 +282,8 @@ func ComplexTypeName() string {
 	return ref.String()
 }
 
-func (c ComplexType) ElementType() Type {
-	return Type{baseType: baseType(C.mlirComplexTypeGetElementType(c.raw()))}
+func (c ComplexType) ElementType() FloatType {
+	return FloatType{baseType: baseType(C.mlirComplexTypeGetElementType(c.Raw()))}
 }
 
 //===----------------------------------------------------------------------===//
@@ -291,8 +295,8 @@ type ShapedType struct {
 }
 
 func AsShapedType(ty TypeLike) (ShapedType, bool) {
-	if C.mlirTypeIsAShaped(ty.raw()) {
-		return ShapedType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsAShaped(ty.Raw()) {
+		return ShapedType{baseType: baseType(ty.Raw())}, true
 	}
 	return ShapedType{}, false
 }
@@ -307,22 +311,22 @@ func IsStaticStrideOfOffset(val int) bool {
 }
 
 func (s ShapedType) ElementType() Type {
-	return Type{baseType: baseType(C.mlirShapedTypeGetElementType(s.raw()))}
+	return Type{baseType: baseType(C.mlirShapedTypeGetElementType(s.Raw()))}
 }
 
-func (s ShapedType) HasRank() bool        { return bool(C.mlirShapedTypeHasRank(s.raw())) }
-func (s ShapedType) Rank() int            { return int(C.mlirShapedTypeGetRank(s.raw())) }
-func (s ShapedType) HasStaticShape() bool { return bool(C.mlirShapedTypeHasStaticShape(s.raw())) }
+func (s ShapedType) HasRank() bool        { return bool(C.mlirShapedTypeHasRank(s.Raw())) }
+func (s ShapedType) Rank() int            { return int(C.mlirShapedTypeGetRank(s.Raw())) }
+func (s ShapedType) HasStaticShape() bool { return bool(C.mlirShapedTypeHasStaticShape(s.Raw())) }
 func (s ShapedType) IsDynamicDim(dim int) bool {
-	return bool(C.mlirShapedTypeIsDynamicDim(s.raw(), C.intptr_t(dim)))
+	return bool(C.mlirShapedTypeIsDynamicDim(s.Raw(), C.intptr_t(dim)))
 }
 
 func (s ShapedType) IsStaticDim(dim int) bool {
-	return bool(C.mlirShapedTypeIsStaticDim(s.raw(), C.intptr_t(dim)))
+	return bool(C.mlirShapedTypeIsStaticDim(s.Raw(), C.intptr_t(dim)))
 }
 
 func (s ShapedType) DimSize(dim int) int {
-	return int(C.mlirShapedTypeGetDimSize(s.raw(), C.intptr_t(dim)))
+	return int(C.mlirShapedTypeGetDimSize(s.Raw(), C.intptr_t(dim)))
 }
 
 func (s ShapedType) IsDynamicSize(size int) bool {
@@ -347,17 +351,17 @@ func NewVectorType(shape []int64, elementType TypeLike) VectorType {
 		cShape = (*C.int64_t)(unsafe.Pointer(&shape[0]))
 	}
 	return VectorType{
-		baseType: baseType(C.mlirVectorTypeGet(C.intptr_t(len(shape)), cShape, elementType.raw())),
+		baseType: baseType(C.mlirVectorTypeGet(C.intptr_t(len(shape)), cShape, elementType.Raw())),
 	}
 }
 
-func NewVectorTypeChecked(loc Location, shape []int64, elementType TypeLike) VectorType {
+func NewVectorTypeChecked(loc LocationLike, shape []int64, elementType TypeLike) VectorType {
 	var cShape *C.int64_t
 	if len(shape) > 0 {
 		cShape = (*C.int64_t)(unsafe.Pointer(&shape[0]))
 	}
 	return VectorType{
-		baseType: baseType(C.mlirVectorTypeGetChecked(loc.raw(), C.intptr_t(len(shape)), cShape, elementType.raw())),
+		baseType: baseType(C.mlirVectorTypeGetChecked(loc.Raw(), C.intptr_t(len(shape)), cShape, elementType.Raw())),
 	}
 }
 
@@ -371,11 +375,11 @@ func NewScalableVectorType(shape []int64, scalable []bool, elementType TypeLike)
 		cScalable = (*C.bool)(unsafe.Pointer(&scalable[0]))
 	}
 	return VectorType{
-		baseType: baseType(C.mlirVectorTypeGetScalable(C.intptr_t(len(shape)), cShape, cScalable, elementType.raw())),
+		baseType: baseType(C.mlirVectorTypeGetScalable(C.intptr_t(len(shape)), cShape, cScalable, elementType.Raw())),
 	}
 }
 
-func NewScalableVectorTypeChecked(loc Location, shape []int64, scalable []bool, elementType TypeLike) VectorType {
+func NewScalableVectorTypeChecked(loc LocationLike, shape []int64, scalable []bool, elementType TypeLike) VectorType {
 	var cShape *C.int64_t
 	if len(shape) > 0 {
 		cShape = (*C.int64_t)(unsafe.Pointer(&shape[0]))
@@ -385,13 +389,13 @@ func NewScalableVectorTypeChecked(loc Location, shape []int64, scalable []bool, 
 		cScalable = (*C.bool)(unsafe.Pointer(&scalable[0]))
 	}
 	return VectorType{
-		baseType: baseType(C.mlirVectorTypeGetScalableChecked(loc.raw(), C.intptr_t(len(shape)), cShape, cScalable, elementType.raw())),
+		baseType: baseType(C.mlirVectorTypeGetScalableChecked(loc.Raw(), C.intptr_t(len(shape)), cShape, cScalable, elementType.Raw())),
 	}
 }
 
 func AsVectorType(ty TypeLike) (VectorType, bool) {
-	if C.mlirTypeIsAVector(ty.raw()) {
-		return VectorType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsAVector(ty.Raw()) {
+		return VectorType{baseType: baseType(ty.Raw())}, true
 	}
 	return VectorType{}, false
 }
@@ -402,9 +406,9 @@ func VectorTypeName() string {
 	return ref.String()
 }
 
-func (v VectorType) IsScalable() bool { return bool(C.mlirVectorTypeIsScalable(v.raw())) }
+func (v VectorType) IsScalable() bool { return bool(C.mlirVectorTypeIsScalable(v.Raw())) }
 func (v VectorType) IsDimScalable(dim int) bool {
-	return bool(C.mlirVectorTypeIsDimScalable(v.raw(), C.intptr_t(dim)))
+	return bool(C.mlirVectorTypeIsDimScalable(v.Raw(), C.intptr_t(dim)))
 }
 
 //===----------------------------------------------------------------------===//
@@ -421,23 +425,23 @@ func NewRankedTensorType(shape []int64, elementType TypeLike, encoding Attribute
 		cShape = (*C.int64_t)(unsafe.Pointer(&shape[0]))
 	}
 	return RankedTensorType{
-		baseType: baseType(C.mlirRankedTensorTypeGet(C.intptr_t(len(shape)), cShape, elementType.raw(), encoding.raw())),
+		baseType: baseType(C.mlirRankedTensorTypeGet(C.intptr_t(len(shape)), cShape, elementType.Raw(), encoding.Raw())),
 	}
 }
 
-func NewRankedTensorTypeChecked(loc Location, shape []int64, elementType TypeLike, encoding Attribute) RankedTensorType {
+func NewRankedTensorTypeChecked(loc LocationLike, shape []int64, elementType TypeLike, encoding Attribute) RankedTensorType {
 	var cShape *C.int64_t
 	if len(shape) > 0 {
 		cShape = (*C.int64_t)(unsafe.Pointer(&shape[0]))
 	}
 	return RankedTensorType{
-		baseType: baseType(C.mlirRankedTensorTypeGetChecked(loc.raw(), C.intptr_t(len(shape)), cShape, elementType.raw(), encoding.raw())),
+		baseType: baseType(C.mlirRankedTensorTypeGetChecked(loc.Raw(), C.intptr_t(len(shape)), cShape, elementType.Raw(), encoding.Raw())),
 	}
 }
 
 func AsRankedTensorType(ty TypeLike) (RankedTensorType, bool) {
-	if C.mlirTypeIsARankedTensor(ty.raw()) {
-		return RankedTensorType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsARankedTensor(ty.Raw()) {
+		return RankedTensorType{baseType: baseType(ty.Raw())}, true
 	}
 	return RankedTensorType{}, false
 }
@@ -449,7 +453,7 @@ func RankedTensorTypeName() string {
 }
 
 func (t RankedTensorType) Encoding() Attribute {
-	return Attribute(C.mlirRankedTensorTypeGetEncoding(t.raw()))
+	return WrapAttribute(C.mlirRankedTensorTypeGetEncoding(t.Raw()))
 }
 
 type UnrankedTensorType struct {
@@ -458,19 +462,19 @@ type UnrankedTensorType struct {
 
 func NewUnrankedTensorType(elementType TypeLike) UnrankedTensorType {
 	return UnrankedTensorType{
-		baseType: baseType(C.mlirUnrankedTensorTypeGet(elementType.raw())),
+		baseType: baseType(C.mlirUnrankedTensorTypeGet(elementType.Raw())),
 	}
 }
 
-func NewUnrankedTensorTypeChecked(loc Location, elementType TypeLike) UnrankedTensorType {
+func NewUnrankedTensorTypeChecked(loc LocationLike, elementType TypeLike) UnrankedTensorType {
 	return UnrankedTensorType{
-		baseType: baseType(C.mlirUnrankedTensorTypeGetChecked(loc.raw(), elementType.raw())),
+		baseType: baseType(C.mlirUnrankedTensorTypeGetChecked(loc.Raw(), elementType.Raw())),
 	}
 }
 
 func AsUnrankedTensorType(ty TypeLike) (UnrankedTensorType, bool) {
-	if C.mlirTypeIsAUnrankedTensor(ty.raw()) {
-		return UnrankedTensorType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsAUnrankedTensor(ty.Raw()) {
+		return UnrankedTensorType{baseType: baseType(ty.Raw())}, true
 	}
 	return UnrankedTensorType{}, false
 }
@@ -495,17 +499,17 @@ func NewMemRefType(elementType TypeLike, shape []int64, layout Attribute, memory
 		cShape = (*C.int64_t)(unsafe.Pointer(&shape[0]))
 	}
 	return MemRefType{
-		baseType: baseType(C.mlirMemRefTypeGet(elementType.raw(), C.intptr_t(len(shape)), cShape, layout.raw(), memorySpace.raw())),
+		baseType: baseType(C.mlirMemRefTypeGet(elementType.Raw(), C.intptr_t(len(shape)), cShape, layout.Raw(), memorySpace.Raw())),
 	}
 }
 
-func NewMemRefTypeChecked(loc Location, elementType TypeLike, shape []int64, layout Attribute, memorySpace Attribute) MemRefType {
+func NewMemRefTypeChecked(loc LocationLike, elementType TypeLike, shape []int64, layout Attribute, memorySpace Attribute) MemRefType {
 	var cShape *C.int64_t
 	if len(shape) > 0 {
 		cShape = (*C.int64_t)(unsafe.Pointer(&shape[0]))
 	}
 	return MemRefType{
-		baseType: baseType(C.mlirMemRefTypeGetChecked(loc.raw(), elementType.raw(), C.intptr_t(len(shape)), cShape, layout.raw(), memorySpace.raw())),
+		baseType: baseType(C.mlirMemRefTypeGetChecked(loc.Raw(), elementType.Raw(), C.intptr_t(len(shape)), cShape, layout.Raw(), memorySpace.Raw())),
 	}
 }
 
@@ -515,23 +519,23 @@ func NewContiguousMemRefType(elementType TypeLike, shape []int64, memorySpace At
 		cShape = (*C.int64_t)(unsafe.Pointer(&shape[0]))
 	}
 	return MemRefType{
-		baseType: baseType(C.mlirMemRefTypeContiguousGet(elementType.raw(), C.intptr_t(len(shape)), cShape, memorySpace.raw())),
+		baseType: baseType(C.mlirMemRefTypeContiguousGet(elementType.Raw(), C.intptr_t(len(shape)), cShape, memorySpace.Raw())),
 	}
 }
 
-func NewContiguousMemRefTypeChecked(loc Location, elementType TypeLike, shape []int64, memorySpace Attribute) MemRefType {
+func NewContiguousMemRefTypeChecked(loc LocationLike, elementType TypeLike, shape []int64, memorySpace Attribute) MemRefType {
 	var cShape *C.int64_t
 	if len(shape) > 0 {
 		cShape = (*C.int64_t)(unsafe.Pointer(&shape[0]))
 	}
 	return MemRefType{
-		baseType: baseType(C.mlirMemRefTypeContiguousGetChecked(loc.raw(), elementType.raw(), C.intptr_t(len(shape)), cShape, memorySpace.raw())),
+		baseType: baseType(C.mlirMemRefTypeContiguousGetChecked(loc.Raw(), elementType.Raw(), C.intptr_t(len(shape)), cShape, memorySpace.Raw())),
 	}
 }
 
 func AsMemRefType(ty TypeLike) (MemRefType, bool) {
-	if C.mlirTypeIsAMemRef(ty.raw()) {
-		return MemRefType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsAMemRef(ty.Raw()) {
+		return MemRefType{baseType: baseType(ty.Raw())}, true
 	}
 	return MemRefType{}, false
 }
@@ -543,15 +547,15 @@ func MemRefTypeName() string {
 }
 
 func (m MemRefType) Layout() Attribute {
-	return Attribute(C.mlirMemRefTypeGetLayout(m.raw()))
+	return WrapAttribute(C.mlirMemRefTypeGetLayout(m.Raw()))
 }
 
 func (m MemRefType) AffineMap() AffineMap {
-	return AffineMap(C.mlirMemRefTypeGetAffineMap(m.raw()))
+	return AffineMap(C.mlirMemRefTypeGetAffineMap(m.Raw()))
 }
 
 func (m MemRefType) MemorySpace() Attribute {
-	return Attribute(C.mlirMemRefTypeGetMemorySpace(m.raw()))
+	return WrapAttribute(C.mlirMemRefTypeGetMemorySpace(m.Raw()))
 }
 
 type UnrankedMemRefType struct {
@@ -560,19 +564,19 @@ type UnrankedMemRefType struct {
 
 func NewUnrankedMemRefType(elementType TypeLike, memorySpace Attribute) UnrankedMemRefType {
 	return UnrankedMemRefType{
-		baseType: baseType(C.mlirUnrankedMemRefTypeGet(elementType.raw(), memorySpace.raw())),
+		baseType: baseType(C.mlirUnrankedMemRefTypeGet(elementType.Raw(), memorySpace.Raw())),
 	}
 }
 
-func NewUnrankedMemRefTypeChecked(loc Location, elementType TypeLike, memorySpace Attribute) UnrankedMemRefType {
+func NewUnrankedMemRefTypeChecked(loc LocationLike, elementType TypeLike, memorySpace Attribute) UnrankedMemRefType {
 	return UnrankedMemRefType{
-		baseType: baseType(C.mlirUnrankedMemRefTypeGetChecked(loc.raw(), elementType.raw(), memorySpace.raw())),
+		baseType: baseType(C.mlirUnrankedMemRefTypeGetChecked(loc.Raw(), elementType.Raw(), memorySpace.Raw())),
 	}
 }
 
 func AsUnrankedMemRefType(ty TypeLike) (UnrankedMemRefType, bool) {
-	if C.mlirTypeIsAUnrankedMemRef(ty.raw()) {
-		return UnrankedMemRefType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsAUnrankedMemRef(ty.Raw()) {
+		return UnrankedMemRefType{baseType: baseType(ty.Raw())}, true
 	}
 	return UnrankedMemRefType{}, false
 }
@@ -584,7 +588,7 @@ func UnrankedMemRefTypeName() string {
 }
 
 func (m UnrankedMemRefType) MemorySpace() Attribute {
-	return Attribute(C.mlirUnrankedMemrefGetMemorySpace(m.raw()))
+	return WrapAttribute(C.mlirUnrankedMemrefGetMemorySpace(m.Raw()))
 }
 
 //===----------------------------------------------------------------------===//
@@ -598,16 +602,16 @@ type TupleType struct {
 func NewTupleType(ctx Context, elements []TypeLike) TupleType {
 	var cElements *C.MlirType
 	if len(elements) > 0 {
-		cElements = &unwrapTypeSlice(elements)[0]
+		cElements = &UnwrapTypeSlice(elements)[0]
 	}
 	return TupleType{
-		baseType: baseType(C.mlirTupleTypeGet(ctx.raw(), C.intptr_t(len(elements)), cElements)),
+		baseType: baseType(C.mlirTupleTypeGet(ctx.Raw(), C.intptr_t(len(elements)), cElements)),
 	}
 }
 
 func AsTupleType(ty TypeLike) (TupleType, bool) {
-	if C.mlirTypeIsATuple(ty.raw()) {
-		return TupleType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsATuple(ty.Raw()) {
+		return TupleType{baseType: baseType(ty.Raw())}, true
 	}
 	return TupleType{}, false
 }
@@ -618,9 +622,9 @@ func TupleTypeName() string {
 	return ref.String()
 }
 
-func (t TupleType) NumTypes() int { return int(C.mlirTupleTypeGetNumTypes(t.raw())) }
+func (t TupleType) NumTypes() int { return int(C.mlirTupleTypeGetNumTypes(t.Raw())) }
 func (t TupleType) Type(pos int) Type {
-	return Type{baseType: baseType(C.mlirTupleTypeGetType(t.raw(), C.intptr_t(pos)))}
+	return Type{baseType: baseType(C.mlirTupleTypeGetType(t.Raw(), C.intptr_t(pos)))}
 }
 
 //===----------------------------------------------------------------------===//
@@ -634,21 +638,21 @@ type FunctionType struct {
 func NewFunctionType(ctx Context, inputs []TypeLike, results []TypeLike) FunctionType {
 	var cInputs *C.MlirType
 	if len(inputs) > 0 {
-		cInputs = &unwrapTypeSlice(inputs)[0]
+		cInputs = &UnwrapTypeSlice(inputs)[0]
 	}
 	var cResults *C.MlirType
 	if len(results) > 0 {
-		cResults = &unwrapTypeSlice(results)[0]
+		cResults = &UnwrapTypeSlice(results)[0]
 	}
 
 	return FunctionType{
-		baseType: baseType(C.mlirFunctionTypeGet(ctx.raw(), C.intptr_t(len(inputs)), cInputs, C.intptr_t(len(results)), cResults)),
+		baseType: baseType(C.mlirFunctionTypeGet(ctx.Raw(), C.intptr_t(len(inputs)), cInputs, C.intptr_t(len(results)), cResults)),
 	}
 }
 
 func AsFunctionType(ty TypeLike) (FunctionType, bool) {
-	if C.mlirTypeIsAFunction(ty.raw()) {
-		return FunctionType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsAFunction(ty.Raw()) {
+		return FunctionType{baseType: baseType(ty.Raw())}, true
 	}
 	return FunctionType{}, false
 }
@@ -659,13 +663,13 @@ func FunctionTypeName() string {
 	return ref.String()
 }
 
-func (f FunctionType) NumInputs() int  { return int(C.mlirFunctionTypeGetNumInputs(f.raw())) }
-func (f FunctionType) NumResults() int { return int(C.mlirFunctionTypeGetNumResults(f.raw())) }
+func (f FunctionType) NumInputs() int  { return int(C.mlirFunctionTypeGetNumInputs(f.Raw())) }
+func (f FunctionType) NumResults() int { return int(C.mlirFunctionTypeGetNumResults(f.Raw())) }
 func (f FunctionType) Input(pos int) Type {
-	return Type{baseType: baseType(C.mlirFunctionTypeGetInput(f.raw(), C.intptr_t(pos)))}
+	return Type{baseType: baseType(C.mlirFunctionTypeGetInput(f.Raw(), C.intptr_t(pos)))}
 }
 func (f FunctionType) Result(pos int) Type {
-	return Type{baseType: baseType(C.mlirFunctionTypeGetResult(f.raw(), C.intptr_t(pos)))}
+	return Type{baseType: baseType(C.mlirFunctionTypeGetResult(f.Raw(), C.intptr_t(pos)))}
 }
 
 //===----------------------------------------------------------------------===//
@@ -680,13 +684,13 @@ func NewOpaqueType(ctx Context, dialectNamespace string, typeData string) Opaque
 	cDialectNamespace := C.mlirStringRefCreate(C.CString(dialectNamespace), C.size_t(len(dialectNamespace)))
 	cTypeData := C.mlirStringRefCreate(C.CString(typeData), C.size_t(len(typeData)))
 	return OpaqueType{
-		baseType: baseType(C.mlirOpaqueTypeGet(ctx.raw(), cDialectNamespace, cTypeData)),
+		baseType: baseType(C.mlirOpaqueTypeGet(ctx.Raw(), cDialectNamespace, cTypeData)),
 	}
 }
 
 func AsOpaqueType(ty TypeLike) (OpaqueType, bool) {
-	if C.mlirTypeIsAOpaque(ty.raw()) {
-		return OpaqueType{baseType: baseType(ty.raw())}, true
+	if C.mlirTypeIsAOpaque(ty.Raw()) {
+		return OpaqueType{baseType: baseType(ty.Raw())}, true
 	}
 	return OpaqueType{}, false
 }
@@ -698,11 +702,11 @@ func OpaqueTypeName() string {
 }
 
 func (o OpaqueType) DialectNamespace() string {
-	ref := BorrowedStringRef(C.mlirOpaqueTypeGetDialectNamespace(o.raw()))
+	ref := BorrowedStringRef(C.mlirOpaqueTypeGetDialectNamespace(o.Raw()))
 	return ref.String()
 }
 
 func (o OpaqueType) Data() string {
-	ref := BorrowedStringRef(C.mlirOpaqueTypeGetData(o.raw()))
+	ref := BorrowedStringRef(C.mlirOpaqueTypeGetData(o.Raw()))
 	return ref.String()
 }

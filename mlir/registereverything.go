@@ -6,11 +6,11 @@ package mlir
 import "C"
 
 func (d DialectRegistry) RegisterAllDialects() {
-	C.mlirRegisterAllDialects(d.raw())
+	C.mlirRegisterAllDialects(d.Raw())
 }
 
 func (c Context) RegisterAllLLVMTranslations() {
-	C.mlirRegisterAllLLVMTranslations(c.raw())
+	C.mlirRegisterAllLLVMTranslations(c.Raw())
 }
 
 func RegisterAllPasses() {
