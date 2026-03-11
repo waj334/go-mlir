@@ -1,59 +1,14 @@
 package mlir
 
 /*
-#include <llvm-c/Target.h>
 #include <mlir-c/Dialect/LLVM.h>
 #include <mlir-c/Target/LLVMIR.h>
 */
 import "C"
-import "unsafe"
 
-type LLVMModuleRef struct {
-	C C.LLVMModuleRef
-}
-
-func WrapExternalLLVMModuleRef(pointer unsafe.Pointer) LLVMModuleRef {
-	return LLVMModuleRef{
-		C: C.LLVMModuleRef(pointer),
-	}
-}
-
-func (l LLVMModuleRef) Ptr() unsafe.Pointer {
-	return unsafe.Pointer(l.C)
-}
-
-type LLVMContextRef struct {
-	C C.LLVMContextRef
-}
-
-func WrapExternalLLVMContextRef(pointer unsafe.Pointer) LLVMContextRef {
-	return LLVMContextRef{
-		C: C.LLVMContextRef(pointer),
-	}
-}
-
-func (l LLVMContextRef) Ptr() unsafe.Pointer {
-	return unsafe.Pointer(l.C)
-}
-
-func WrapExternalLLVMTargetDataRef(pointer unsafe.Pointer) LLVMTargetDataRef {
-	return LLVMTargetDataRef{
-		C: C.LLVMTargetDataRef(pointer),
-	}
-}
-
-func (l LLVMTargetDataRef) Ptr() unsafe.Pointer {
-	return unsafe.Pointer(l.C)
-}
-
-type LLVMTargetDataRef struct {
-	C C.LLVMTargetDataRef
-}
-
-func TranslateModuleToLLVMIR(module Operation, ctx LLVMContextRef) LLVMModuleRef {
-	return LLVMModuleRef{
-		C: C.mlirTranslateModuleToLLVMIR(module.Raw(), ctx.C),
-	}
+func TranslateModuleToLLVMIR(module Operation, ctx LLVMContextRef) (ref LLVMModuleRef) {
+	ref.C = C.mlirTranslateModuleToLLVMIR(module.Raw(), ctx.C)
+	return ref
 }
 
 type LLVMLinkage C.MlirLLVMLinkage
@@ -116,72 +71,6 @@ const (
 	LLVMDINameTableKindGNU     LLVMDINameTableKind = C.MlirLLVMDINameTableKindGNU
 	LLVMDINameTableKindNone    LLVMDINameTableKind = C.MlirLLVMDINameTableKindNone
 	LLVMDINameTableKindApple   LLVMDINameTableKind = C.MlirLLVMDINameTableKindApple
-)
-
-const (
-	LLVMDWARFSourceLanguageC89 = iota + 1
-	LLVMDWARFSourceLanguageC
-	LLVMDWARFSourceLanguageAda83
-	LLVMDWARFSourceLanguageCPlusPlus
-	LLVMDWARFSourceLanguageCobol74
-	LLVMDWARFSourceLanguageCobol85
-	LLVMDWARFSourceLanguageFortran77
-	LLVMDWARFSourceLanguageFortran90
-	LLVMDWARFSourceLanguagePascal83
-	LLVMDWARFSourceLanguageModula2
-	LLVMDWARFSourceLanguageJava
-	LLVMDWARFSourceLanguageC99
-	LLVMDWARFSourceLanguageAda95
-	LLVMDWARFSourceLanguageFortran95
-	LLVMDWARFSourceLanguagePLI
-	LLVMDWARFSourceLanguageObjC
-	LLVMDWARFSourceLanguageObjCPlusPlus
-	LLVMDWARFSourceLanguageUPC
-	LLVMDWARFSourceLanguageD
-	LLVMDWARFSourceLanguagePython
-	LLVMDWARFSourceLanguageOpenCL
-	LLVMDWARFSourceLanguageGo
-	LLVMDWARFSourceLanguageModula3
-	LLVMDWARFSourceLanguageHaskell
-	LLVMDWARFSourceLanguageCPlusPlus03
-	LLVMDWARFSourceLanguageCPlusPlus11
-	LLVMDWARFSourceLanguageOCaml
-	LLVMDWARFSourceLanguageRust
-	LLVMDWARFSourceLanguageC11
-	LLVMDWARFSourceLanguageSwift
-	LLVMDWARFSourceLanguageJulia
-	LLVMDWARFSourceLanguageDylan
-	LLVMDWARFSourceLanguageCPlusPlus14
-	LLVMDWARFSourceLanguageFortran03
-	LLVMDWARFSourceLanguageFortran08
-	LLVMDWARFSourceLanguageRenderScript
-	LLVMDWARFSourceLanguageBLISS
-	LLVMDWARFSourceLanguageKotlin
-	LLVMDWARFSourceLanguageZig
-	LLVMDWARFSourceLanguageCrystal
-	LLVMDWARFSourceLanguageCPlusPlus17
-	LLVMDWARFSourceLanguageCPlusPlus20
-	LLVMDWARFSourceLanguageC17
-	LLVMDWARFSourceLanguageFortran18
-	LLVMDWARFSourceLanguageAda2005
-	LLVMDWARFSourceLanguageAda2012
-	LLVMDWARFSourceLanguageHIP
-	LLVMDWARFSourceLanguageAssembly
-	LLVMDWARFSourceLanguageCSharp
-	LLVMDWARFSourceLanguageMojo
-	LLVMDWARFSourceLanguageGLSL
-	LLVMDWARFSourceLanguageGLSLES
-	LLVMDWARFSourceLanguageHLSL
-	LLVMDWARFSourceLanguageOpenCLCPP
-	LLVMDWARFSourceLanguageCPPForOpenCL
-	LLVMDWARFSourceLanguageSYCL
-	LLVMDWARFSourceLanguageRuby
-	LLVMDWARFSourceLanguageMove
-	LLVMDWARFSourceLanguageHylo
-	LLVMDWARFSourceLanguageMetal
-	LLVMDWARFSourceLanguageMipsAssembler
-	LLVMDWARFSourceLanguageGOOGLERenderScript
-	LLVMDWARFSourceLanguageBORLANDDelphi
 )
 
 type LLVMDICompileUnitAttr struct {
